@@ -1,4 +1,5 @@
 // Cave Drone Sim viewer. Draws whatever the Python server sends; holds no sim logic.
+import { recordingStates } from "./recording.js";
 // World frame is z-up (same as the simulator), so the camera uses z as "up".
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -567,6 +568,10 @@ function updateFpvHud() {
   $("fpvClr").className = d.clear != null && d.clear < 0.4 ? "warn" : "";
   $("fpvGust").textContent = `${gust.toFixed(2)} m/s²`;
   $("fpvAtt").textContent = `R ${(d.rp[0] * 57.3).toFixed(0)}° P ${(d.rp[1] * 57.3).toFixed(0)}°`;
+  if (initMsg.recording) {
+    $("fpvClr").textContent = $("fpvGust").textContent = "not recorded";
+    $("fpvAtt").textContent = "Heading reconstructed";
+  }
   $("fpvBat").textContent = `${(100 * d.battery).toFixed(0)} %`;
   $("fpvHorizonBox").style.display = v === "fpv" ? "block" : "none";
   const dead = ["crashed", "dead", "out"].includes(d.status);
@@ -751,7 +756,8 @@ function connect() {
   ws.onclose = () => { $("status").textContent = "연결 끊김 (서버 종료?)"; };
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data);
-    if (msg.type === "init") onInit(msg);
+    if (msg.type === "init") { onInit(msg); showPaused(msg.paused); }
+    else if (msg.type === "pause") showPaused(msg.paused);
     else if (msg.type === "state") onState(msg);
     else if (msg.type === "history") onHistory(msg);
     else if (msg.type === "trails") { if (replayAt == null) onTrails(msg); }
@@ -759,13 +765,43 @@ function connect() {
   };
 }
 loadDroneModel();
-connect();
+const recording = new URLSearchParams(location.search).get("record");
+if (recording) {
+  (async () => {
+    const url = new URL(recording, location.href);
+    if (url.origin !== location.origin || !url.pathname.startsWith("/runs/") || !url.pathname.endsWith(".json"))
+      throw new Error("Choose a recording under /runs/");
+    const get = async (path) => { const r = await fetch(path); if (!r.ok) throw new Error(`Cannot load ${path}`); return r.json(); };
+    const record = await get(url);
+    if (!/^[a-zA-Z0-9_-]+$/.test(record.map)) throw new Error("Invalid map name");
+    const [meta, truth] = await Promise.all([get(`/maps/${record.map}/map.json`), get(`/maps/${record.map}/truth.json`)]);
+    let progress = [];
+    const trace = await fetch(url.pathname.replace(/\.json$/, "_progress.jsonl"));
+    if (trace.ok) progress = (await trace.text()).trim().split("\n").filter(Boolean).map(JSON.parse);
+    onInit({ type: "init", recording: true, map: record.map, base: meta.base, base_station: meta.base_station,
+      artifacts: truth.artifacts, n_drones: 1, home_radius: 3, comms_range: 30,
+      mission_time_s: meta.mission.time_s, mission: meta.mission });
+    onHistory({ states: recordingStates(record, progress) });
+    onTrails(record);
+    showReplay(0);
+    $("rpSpeed").value = "16";
+    $("status").textContent = `Saved mission · seed ${record.seed} · ${record.score.lap_time_s} s · trajectory replay`;
+    $("pause").disabled = $("speed").disabled = true;
+    $("sensorbtns").hidden = true;
+    $("cLidar").checked = false;
+    $("cLidar").disabled = true;
+    $("rpLive").textContent = "Final result";
+    $("rpLive").onclick = () => { showReplay(history.length - 1); onDone({ score: record.score }); };
+  })().catch((e) => { $("status").textContent = e.message; });
+} else connect();
 
 let paused = false;
+function showPaused(value) {
+  paused = Boolean(value);
+  $("pause").textContent = paused ? "Resume (paused)" : "Pause";
+}
 $("pause").onclick = () => {
-  paused = !paused;
-  ws.send(JSON.stringify({ cmd: "pause", value: paused }));
-  $("pause").textContent = paused ? "재개" : "일시정지";
+  ws.send(JSON.stringify({ cmd: "pause", value: !paused }));
 };
 $("speed").onchange = (e) => ws.send(JSON.stringify({ cmd: "speed", value: Number(e.target.value) }));
 $("opacity").oninput = (e) => caveMats.forEach((m) => { m.opacity = e.target.value / 100; m.depthWrite = e.target.value > 90; });
@@ -795,8 +831,8 @@ const PILOT_KEYS = new Set(["arrowup", "arrowdown", "arrowleft", "arrowright", "
 const held = new Set();
 const sendKeys = () => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ cmd: "keys", keys: [...held] })); };
 const pilotKey = (e, down) => {
-  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
-  const k = e.key.toLowerCase();
+  if (down && (e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) return;
+  const k = (e.code.startsWith("Key") ? e.code.slice(3) : e.key).toLowerCase();
   if (!PILOT_KEYS.has(k)) return;
   if (k.startsWith("arrow")) e.preventDefault();       // no page scrolling
   const had = held.has(k);

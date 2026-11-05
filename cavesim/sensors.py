@@ -4,6 +4,7 @@ Every sensor is body-fixed: when the drone tilts to accelerate, the LiDAR, IMU a
 rangefinder tilt with it. Frames: body x forward, y left, z up; R maps body -> world.
 """
 import numpy as np
+import pybullet as p
 
 from . import config as C
 
@@ -11,6 +12,7 @@ CAVE_GROUP, DRONE_GROUP = 1, 2
 # Threads for a LiDAR sweep's ray batch. Keep 1: on Windows any value above 1 (or 0 = all cores)
 # made PyBullet hang as soon as two simulations ran at the same time.
 RAY_THREADS = 1   # sensors see rock and drones; course fences (group 4) stay invisible
+RAY_BATCH = p.MAX_RAY_INTERSECTION_BATCH_SIZE - 1  # ponytail: stay below the build's limit; at it a ray can be dropped
 
 
 def rot_z(a):
@@ -80,8 +82,8 @@ class Lidar:
         start = (P + dirs_w * self.start).tolist()
         end = (P + dirs_w * lp.max_range).tolist()
         hits = []
-        for i in range(0, len(start), 16000):
-            hits += pb.rayTestBatch(start[i:i + 16000], end[i:i + 16000], numThreads=RAY_THREADS,
+        for i in range(0, len(start), RAY_BATCH):
+            hits += pb.rayTestBatch(start[i:i + RAY_BATCH], end[i:i + RAY_BATCH], numThreads=RAY_THREADS,
                                     collisionFilterMask=CAVE_GROUP | DRONE_GROUP)
         obj = np.fromiter((h[0] for h in hits), int, len(hits))
         frac = np.fromiter((h[2] for h in hits), float, len(hits))

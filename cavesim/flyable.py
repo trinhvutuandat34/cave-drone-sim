@@ -29,6 +29,7 @@ from pybullet_utils.bullet_client import BulletClient
 from scipy.spatial import cKDTree
 
 from .sim import ENCLOSED_M, MESH_CHUNK
+from .sensors import RAY_BATCH
 
 R_FLY = 0.3          # m: drone collision radius 0.2 + 0.1 margin
 RES = 0.5            # m voxel (the reference planner's resolution)
@@ -122,8 +123,8 @@ class Course:
     def hits(self, starts, ends):
         """Does each ray hit the mesh?"""
         r = []
-        for s in range(0, len(starts), 16_000):           # rayTestBatch takes at most 16384
-            r += self.pb.rayTestBatch(starts[s:s + 16_000].tolist(), ends[s:s + 16_000].tolist(), numThreads=1)
+        for s in range(0, len(starts), RAY_BATCH):
+            r += self.pb.rayTestBatch(starts[s:s + RAY_BATCH].tolist(), ends[s:s + RAY_BATCH].tolist(), numThreads=1)
         return np.array([h[0] >= 0 for h in r], dtype=bool)
 
     def on_course(self, q):

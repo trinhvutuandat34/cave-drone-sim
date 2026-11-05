@@ -88,7 +88,7 @@ class Session:
 
     async def handler(self, ws):
         try:
-            await ws.send(json.dumps(self.sim.viewer_init()))
+            await ws.send(json.dumps({**self.sim.viewer_init(), "paused": self.paused}))
             async for raw in ws:
                 msg = json.loads(raw)
                 cmd = msg.get("cmd")
@@ -103,6 +103,7 @@ class Session:
                     await ws.send(json.dumps(self.sim.sensor_packet(self.sensor_clients[ws])))
                 elif cmd == "pause":
                     self.paused = bool(msg.get("value", not self.paused))
+                    self.broadcast({"type": "pause", "paused": self.paused})
                 elif cmd == "speed":
                     self.speed = float(msg["value"])
                 elif cmd == "keys":

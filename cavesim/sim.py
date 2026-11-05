@@ -35,7 +35,7 @@ RESCUE_RADIUS = 3.0              # m from the survivor (with line of sight) that
 ENCLOSED_M = 30.0
 OUT_GRACE_S = 1.0
 DOWN_STATES = ("landed", "crashed", "dead", "out")   # motors off
-MESH_CHUNK = 40_000             # triangles per PyBullet mesh shape
+MESH_CHUNK = 10_000             # triangles; macOS PyBullet limits each shape to 32,768 indices
 ATTITUDE_EST_STD = 0.005   # rad, flight-controller roll/pitch estimate noise
 
 
@@ -172,8 +172,7 @@ class Simulator:
         self.pb.setGravity(0, 0, -C.GRAVITY)
         self.pb.setTimeStep(self.cfg.dt)
         mesh = np.load(self.map_dir / "mesh.npz")
-        # PyBullet takes at most 2^17 vertices per mesh shape, so big maps (the SubT
-        # worlds) are loaded as several static bodies of MESH_CHUNK triangles each.
+        # Split meshes to fit PyBullet's vertex and index limits on every platform.
         V, F = mesh["vertices"], mesh["faces"]
         self.caves = set()
         for k in range(0, len(F), MESH_CHUNK):

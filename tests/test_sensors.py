@@ -17,6 +17,16 @@ def world():
     return sim, sim.drones[0].true_pos()
 
 
+def test_full_lidar_scan_preserves_every_beam():
+    sim, pos = world()
+    try:
+        ranges, _ = sim.lidar.scan(sim.pb, [(pos, np.eye(3))], np.random.default_rng(0))
+        assert ranges.shape == (len(sim.lidar.dirs),)
+        assert np.isfinite(ranges).any()
+    finally:
+        sim.close()
+
+
 def test_motion_distortion_fires_each_column_from_its_own_pose():
     sim, pos = world()
     lidar = Lidar(EXACT.__class__(**{**EXACT.__dict__, "motion_distortion": True}), 0.22)
