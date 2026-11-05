@@ -1,4 +1,11 @@
 // Saved trajectories contain positions every 0.5 s, rather than video or attitudes.
+export function parseProgress(text) {
+  // Older Python exports used Infinity for an unmeasured ceiling. Preserve the
+  // original logs and accept that legacy sentinel as missing optional metadata.
+  return text.split("\n").filter((line) => line.trim()).map((line) =>
+    JSON.parse(line.replace(/("roof_gap"\s*:\s*)(?:-?Infinity|NaN)(?=\s*[,}])/g, "$1null")));
+}
+
 export function recordingStates(record, progress = []) {
   const trail = record.true?.[0], odom = record.odom?.[0];
   const end = record.score?.time_s;

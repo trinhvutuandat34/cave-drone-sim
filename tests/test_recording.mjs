@@ -1,5 +1,12 @@
 import assert from "node:assert/strict";
-import { recordingStates } from "../viewer/recording.js";
+import { parseProgress, recordingStates } from "../viewer/recording.js";
+
+assert.deepEqual(parseProgress('{"roof_gap": Infinity,"t":1}\n{"roof_gap":0.8,"t":2}\n'),
+  [{ roof_gap: null, t: 1 }, { roof_gap: 0.8, t: 2 }]);
+assert.deepEqual(parseProgress('{"roof_gap":-Infinity}\n{"roof_gap":NaN}'),
+  [{ roof_gap: null }, { roof_gap: null }]);
+assert.equal(parseProgress('{"roof_gap":"Infinity"}')[0].roof_gap, "Infinity");
+assert.throws(() => parseProgress('{"invalid": Infinity}'), SyntaxError);
 
 const score = { time_s: 1.1, success: true, returned: [0], lap_time_s: 1.1, rescued_at_s: { 0: 0.6 } };
 const record = { score, true: [[[0, 0, 1], [1, 0, 1], [1, 1, 0.1]]], odom: [] };

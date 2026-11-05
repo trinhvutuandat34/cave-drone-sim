@@ -45,12 +45,13 @@ def main():
                     if d.error:
                         raise RuntimeError(d.error)
                     if sim.tick % 100 == 0 or not running:
+                        roof_gap = getattr(a, "roof_gap", np.inf)
                         row = {"t": round(sim.t, 1), "status": d.status, "debug": a.debug(),
                                "pos": np.round(d.last_obs.pos, 2).tolist(), "battery": round(d.battery, 3),
                                "velocity": np.round(d.last_obs.vel, 3).tolist(), "command": np.round(d.cmd.vel, 3).tolist(),
                                "range_down": float(d.last_obs.range_down) if np.isfinite(d.last_obs.range_down) else None,
                                "gps": None if d.last_obs.gps is None else np.round(d.last_obs.gps, 2).tolist(),
-                               "roof_gap": float(getattr(a, "roof_gap", np.inf)),
+                               "roof_gap": float(roof_gap) if np.isfinite(roof_gap) else None,
                                "score": sim.score()}
                         trace.write(json.dumps(row, default=lambda x: np.asarray(x).tolist()) + "\n")
                         print(json.dumps({"t": row["t"], "status": row["status"], "mode": row["debug"].get("mode"),

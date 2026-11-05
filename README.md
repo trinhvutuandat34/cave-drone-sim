@@ -1,5 +1,7 @@
 # Cave Drone Sim
 
+**Team 1 results:** [Autonomous test progress and results](AUTONOMOUS_TEST_RESULTS.md) · [Run archive](runs/README.md)
+
 GPS가 없는 동굴에서 드론 여러 대로 탐사하고, 목표물을 찾아 보고하고, 입구로 돌아오는 시뮬레이터입니다. DARPA SubT Challenge를 단순하게 줄인 형태입니다.
 
 시뮬레이션은 Python이 합니다. PyBullet으로 충돌과 LiDAR를 계산하고, 드론 운동과 통신, 채점도 Python 쪽에서 처리합니다. 브라우저의 Three.js 뷰어는 Python이 보내 주는 동굴, 드론, LiDAR 점, 궤적, 통신 링크를 그리기만 합니다.

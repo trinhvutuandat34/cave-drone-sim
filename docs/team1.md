@@ -64,9 +64,10 @@ Minor contacts were recorded: one at up to 0.39 m/s on seed 0, two at up to 0.92
 on seed 1. These two successes do not establish performance on other seeds or the
 optional 20 m target-error challenge.
 
-The local result files are `runs/team1_rescue_easy_seed0_20261105_223227.json` and
-`runs/team1_rescue_easy_seed1_20261105_220956.json`. Generated recordings and the local
-Python environment are ignored by Git; run the evaluator to create your own results.
+The [autonomous test report](../AUTONOMOUS_TEST_RESULTS.md) contains the progress history,
+source hashes and result links. Portable recordings and results are published in the
+[run archive](../runs/README.md). The local Python environment, tooling and large binary
+debugging snapshots remain ignored by Git. Run the evaluator to create new results.
 
 To view a saved trajectory, start a local HTTP server from the project directory:
 
@@ -79,12 +80,13 @@ The bottom replay controls scrub the recorded positions. Heading is reconstructe
 movement; full attitude, LiDAR and video were not recorded. At 16×, the replay takes about 40 s.
 
 The original trajectory replay above shows an earlier successful agent version at
-639.6 s. Its source is preserved locally in `runs/team1_first_success.py`.
+639.6 s. Its source is preserved in
+[`runs/team1_first_success.py`](../runs/team1_first_success.py).
 
 The latest manual recording, `runs/manual_20261105_221651.jsonl`, completed the mission
 in 369.5 s, rescued at 195.4 s, had no collisions and landed 2.09 m from base.
-Its full viewer history and score are saved locally in
-`runs/manual_20261105_221651_mission.json`.
+Its full viewer history and score are saved in
+[`runs/manual_20261105_221651_mission.json`](../runs/manual_20261105_221651_mission.json).
 The separate recorded-route PID exercise has not been validated using that new recording.
 
 Focused checks:

@@ -1,5 +1,5 @@
 // Cave Drone Sim viewer. Draws whatever the Python server sends; holds no sim logic.
-import { recordingStates } from "./recording.js";
+import { parseProgress, recordingStates } from "./recording.js";
 // World frame is z-up (same as the simulator), so the camera uses z as "up".
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -777,7 +777,7 @@ if (recording) {
     const [meta, truth] = await Promise.all([get(`/maps/${record.map}/map.json`), get(`/maps/${record.map}/truth.json`)]);
     let progress = [];
     const trace = await fetch(url.pathname.replace(/\.json$/, "_progress.jsonl"));
-    if (trace.ok) progress = (await trace.text()).trim().split("\n").filter(Boolean).map(JSON.parse);
+    if (trace.ok) progress = parseProgress(await trace.text());
     onInit({ type: "init", recording: true, map: record.map, base: meta.base, base_station: meta.base_station,
       artifacts: truth.artifacts, n_drones: 1, home_radius: 3, comms_range: 30,
       mission_time_s: meta.mission.time_s, mission: meta.mission });

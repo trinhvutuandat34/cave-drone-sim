@@ -8,7 +8,14 @@ results/
 # Downloaded datasets for sensor calibration (see docs/sensors.md)
 data/
 
-# Local outputs and tooling
-runs/
+# Publish portable run evidence, while keeping environments and binary snapshots local.
+runs/*
+!runs/README.md
+!runs/*.json
+!runs/*.jsonl
+!runs/*.csv
+!runs/*.npz
+!runs/*.py
+.DS_Store
 .claude/
 *.zip
